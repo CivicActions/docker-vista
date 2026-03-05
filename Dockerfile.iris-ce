@@ -88,9 +88,7 @@ ENV NAMESPACE=${instance}
 # Disable superserver during build — avoids "port 1972 in use" errors
 # that occur under QEMU emulation (arm64 cross-builds in buildkit).
 # Edit the CPF file directly since iris merge requires a running instance.
-RUN CPF=$(iris qlist IRIS 2>/dev/null | cut -d'^' -f6 || true) \
-    && if [ -z "$CPF" ]; then CPF=/usr/irissys/iris.cpf; fi \
-    && sed -i 's/^DefaultPort=1972/DefaultPort=0/' "$CPF"
+RUN sed -i 's/^DefaultPort=1972/DefaultPort=0/' /usr/irissys/iris.cpf
 
 # Create namespace, apply mappings, import routines/globals, post-install
 RUN iris start IRIS \
@@ -100,9 +98,7 @@ RUN iris start IRIS \
     && iris stop IRIS quietly
 
 # Re-enable superserver on port 1972 for runtime
-RUN CPF=$(iris qlist IRIS 2>/dev/null | cut -d'^' -f6 || true) \
-    && if [ -z "$CPF" ]; then CPF=/usr/irissys/iris.cpf; fi \
-    && sed -i 's/^DefaultPort=0/DefaultPort=1972/' "$CPF"
+RUN sed -i 's/^DefaultPort=0/DefaultPort=1972/' /usr/irissys/iris.cpf
 
 EXPOSE 1972 52773
 
