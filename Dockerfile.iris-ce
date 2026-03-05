@@ -85,20 +85,21 @@ RUN UPPER=$(echo "${instance}" | tr '[:lower:]' '[:upper:]') \
 # IRIS namespaces are case-insensitive; the CPF files are already uppercased above.
 ENV NAMESPACE=${instance}
 
-# Disable superserver during build — avoids "port 1972 in use" errors
-# that occur under QEMU emulation (arm64 cross-builds in buildkit).
-# Edit the CPF file directly since iris merge requires a running instance.
-RUN sed -i 's/^DefaultPort=1972/DefaultPort=0/' /usr/irissys/iris.cpf
-
-# Create namespace, apply mappings, import routines/globals, post-install
-RUN iris start IRIS \
+# Apply namespace/mapping configuration directly into the CPF file while IRIS
+# is stopped, then start IRIS for the import. This avoids "iris merge" while
+# running, which tries to restart the superserver and fails under QEMU.
+# Step 1: Create the database directory and append config to the CPF
+RUN iris start IRIS quietly \
     && iris merge IRIS /opt/vista/merge-create.cpf \
     && iris merge IRIS /opt/vista/merge-map.cpf \
-    && /opt/vista/scripts/import.sh \
     && iris stop IRIS quietly
 
-# Re-enable superserver on port 1972 for runtime
-RUN sed -i 's/^DefaultPort=0/DefaultPort=1972/' /usr/irissys/iris.cpf
+# Step 2: Import routines/globals and run post-install.
+# Use "nostu" to start without the superserver — avoids port-binding errors
+# that occur under QEMU emulation (arm64 cross-builds in buildkit).
+RUN iris start IRIS nostu \
+    && /opt/vista/scripts/import.sh \
+    && iris stop IRIS quietly
 
 EXPOSE 1972 52773
 
