@@ -10,6 +10,7 @@
 #   SCRIPTS_DIR - Override scripts directory (default: /opt/vista/scripts)
 #   NAMESPACE   - Override namespace (default: RPMS)
 #---------------------------------------------------------------------------
+# Steps 1-2 (import) are critical; steps 3-5 are best-effort configuration
 set -e
 
 echo "=== IRIS CE Import Script ==="
@@ -50,6 +51,8 @@ echo "  Global import complete"
 rm -f /tmp/globals.lst
 
 # --- Step 3: Run KBANTCLN ---
+# From here on, steps are best-effort (non-fatal)
+set +e
 echo ""
 echo "=== Step 3: Running KBANTCLN ==="
 if [ -f "$SCRIPTS_DIR/KBANTCLN.m" ]; then
@@ -58,19 +61,24 @@ DO \$SYSTEM.OBJ.Load("${SCRIPTS_DIR}/KBANTCLN.m","ck-d")
 IF \$TEXT(START^KBANTCLN)]"" DO START^KBANTCLN("ROU","${NAMESPACE}",9999,"RPMS SANDBOX","RPMS.SANDBOX.OSEHRA.ORG")
 HALT
 KBANEOF
-    echo "  KBANTCLN complete"
+    echo "  KBANTCLN complete (exit: $?)"
 else
     echo "  KBANTCLN.m not found - skipping"
 fi
 
 # --- Step 4: Run ZTMGRSET ---
+# ZTMGRSET prompts for the OS type — feed it "IRIS" and confirm
 echo ""
 echo "=== Step 4: Running ZTMGRSET ==="
-iris session "$IRIS_INSTANCE" -B -U "$NAMESPACE" <<ZTMEOF || echo "  ZTMGRSET had warnings (non-fatal)"
+iris session "$IRIS_INSTANCE" -B -U "$NAMESPACE" <<ZTMEOF
 IF \$TEXT(^ZTMGRSET)]"" DO ^ZTMGRSET
+IRIS
+Y
+Y
+Y
 HALT
 ZTMEOF
-echo "  ZTMGRSET complete"
+echo "  ZTMGRSET complete (exit: $?)"
 
 # --- Step 5: Post-install configuration ---
 echo ""
@@ -94,3 +102,7 @@ echo "  Routines:    $ROUTINE_COUNT files"
 echo "  Globals:     $GLOBAL_COUNT files"
 echo "  Namespace:   $NAMESPACE"
 echo "  Completed at: $(date)"
+
+# Always exit 0 — the critical import steps (1-2) already use set -e;
+# steps 3-5 are best-effort and should not fail the build.
+exit 0
