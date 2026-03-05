@@ -99,7 +99,7 @@ RUN iris start IRIS quietly \
 # that occur under QEMU emulation (arm64 cross-builds in buildkit).
 RUN iris start IRIS nostu \
     && /opt/vista/scripts/import.sh \
-    && iris stop IRIS quietly
+    ; iris stop IRIS quietly || true
 
 EXPOSE 1972 52773
 
