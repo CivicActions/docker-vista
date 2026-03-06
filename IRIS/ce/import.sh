@@ -27,7 +27,7 @@ SCRIPTS_DIR="${SCRIPTS_DIR:-/opt/vista/scripts}"
 # --- Step 0: Create Database, Namespace, and Mappings ---
 echo ""
 echo "=== Step 0: Creating Database and Namespace ==="
-iris session "$IRIS_INSTANCE" -U %SYS <<NSEOF
+iris session "$IRIS_INSTANCE" -B <<NSEOF
 DO \$SYSTEM.OBJ.Load("${SCRIPTS_DIR}/setup-namespace.m","ck-d")
 DO ^setupns
 HALT
@@ -40,7 +40,8 @@ echo "=== Step 1: Importing Routines ==="
 ROUTINE_COUNT=$(find "$SOURCE_DIR" -name "*.m" -type f | wc -l)
 echo "  Found $ROUTINE_COUNT routine files"
 find "$SOURCE_DIR" -name "*.m" -type f > /tmp/routines.lst
-iris session "$IRIS_INSTANCE" -U "${NAMESPACE}" <<RTNEOF
+iris session "$IRIS_INSTANCE" -B <<RTNEOF
+ZN "${NAMESPACE}"
 DO \$SYSTEM.OBJ.Load("${SCRIPTS_DIR}/importrtn.m","ck-d")
 DO ^importrtn
 HALT
@@ -54,7 +55,8 @@ echo "=== Step 2: Importing Globals ==="
 GLOBAL_COUNT=$(find "$SOURCE_DIR" -name "*.zwr" -type f | wc -l)
 echo "  Found $GLOBAL_COUNT global files"
 find "$SOURCE_DIR" -name "*.zwr" -type f > /tmp/globals.lst
-iris session "$IRIS_INSTANCE" -U "${NAMESPACE}" <<GBLEOF
+iris session "$IRIS_INSTANCE" -B <<GBLEOF
+ZN "${NAMESPACE}"
 DO \$SYSTEM.OBJ.Load("${SCRIPTS_DIR}/importgbl.m","ck-d")
 DO ^importgbl
 HALT
@@ -68,7 +70,8 @@ set +e
 echo ""
 echo "=== Step 3: Running KBANTCLN ==="
 if [ -f "$SCRIPTS_DIR/KBANTCLN.m" ]; then
-    iris session "$IRIS_INSTANCE" -U "${NAMESPACE}" <<KBANEOF
+    iris session "$IRIS_INSTANCE" -B <<KBANEOF
+ZN "${NAMESPACE}"
 DO \$SYSTEM.OBJ.Load("${SCRIPTS_DIR}/KBANTCLN.m","ck-d")
 IF \$TEXT(START^KBANTCLN)]"" DO START^KBANTCLN("ROU","${NAMESPACE}",9999,"RPMS SANDBOX","RPMS.SANDBOX.OSEHRA.ORG")
 HALT
@@ -82,7 +85,8 @@ fi
 # ZTMGRSET prompts for the OS type — feed it "IRIS" and confirm
 echo ""
 echo "=== Step 4: Running ZTMGRSET ==="
-iris session "$IRIS_INSTANCE" -U "${NAMESPACE}" <<ZTMEOF
+iris session "$IRIS_INSTANCE" -B <<ZTMEOF
+ZN "${NAMESPACE}"
 IF \$TEXT(^ZTMGRSET)]"" DO ^ZTMGRSET
 IRIS
 Y
@@ -97,7 +101,8 @@ echo ""
 echo "=== Step 5: Running Post-Install Configuration ==="
 POSTINSTALL="$SCRIPTS_DIR/postinstall.m"
 if [ -f "$POSTINSTALL" ]; then
-    iris session "$IRIS_INSTANCE" -U "${NAMESPACE}" <<POSTEOF || echo "  Post-install had warnings (non-fatal)"
+    iris session "$IRIS_INSTANCE" -B <<POSTEOF || echo "  Post-install had warnings (non-fatal)"
+ZN "${NAMESPACE}"
 DO \$SYSTEM.OBJ.Load("${POSTINSTALL}","ck-d")
 DO ^postinstall
 HALT

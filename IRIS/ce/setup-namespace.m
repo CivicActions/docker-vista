@@ -27,7 +27,7 @@ setupns ; Create RPMS database, namespace, and mappings
  KILL props
  SET props("Directory")=dir
  SET sc=##class(Config.Databases).Create(ns,.props)
- IF $$$ISERR(sc) DO  QUIT
+ IF 'sc DO  QUIT
  . WRITE "  ERROR creating database: ",$SYSTEM.Status.GetErrorText(sc),!
  WRITE "  Database created.",!
  ;
@@ -38,7 +38,7 @@ setupns ; Create RPMS database, namespace, and mappings
  SET props("Routines")=ns
  SET props("Library")="IRISLIB"
  SET sc=##class(Config.Namespaces).Create(ns,.props)
- IF $$$ISERR(sc) DO  QUIT
+ IF 'sc DO  QUIT
  . WRITE "  ERROR creating namespace: ",$SYSTEM.Status.GetErrorText(sc),!
  WRITE "  Namespace created.",!
  ;
@@ -114,12 +114,12 @@ MAP(type,ns,name,label) ; Add a routine mapping
  NEW sc,props
  SET props("Database")=ns
  SET sc=##class(Config.MapRoutines).Create(ns,name,.props)
- IF $$$ISERR(sc) WRITE "  WARN "_label_": ",$SYSTEM.Status.GetErrorText(sc),!
+ IF 'sc WRITE "  WARN "_label_": ",$SYSTEM.Status.GetErrorText(sc),!
  QUIT
  ;
 GMAP(ns,name,db,label) ; Add a global mapping
  NEW sc,props
  SET props("Database")=db
  SET sc=##class(Config.MapGlobals).Create(ns,name,.props)
- IF $$$ISERR(sc) WRITE "  WARN "_label_": ",$SYSTEM.Status.GetErrorText(sc),!
+ IF 'sc WRITE "  WARN "_label_": ",$SYSTEM.Status.GetErrorText(sc),!
  QUIT
