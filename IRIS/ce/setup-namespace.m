@@ -27,8 +27,7 @@ setupns ; Create RPMS database, namespace, and mappings
  KILL props
  SET props("Directory")=dir
  SET sc=##class(Config.Databases).Create(ns,.props)
- IF 'sc DO  QUIT
- . WRITE "  ERROR creating database: ",$SYSTEM.Status.GetErrorText(sc),!
+ IF 'sc WRITE "  ERROR creating database: ",$SYSTEM.Status.GetErrorText(sc),! QUIT
  WRITE "  Database created.",!
  ;
  ; --- Step 2: Create Namespace ---
@@ -38,8 +37,7 @@ setupns ; Create RPMS database, namespace, and mappings
  SET props("Routines")=ns
  SET props("Library")="IRISLIB"
  SET sc=##class(Config.Namespaces).Create(ns,.props)
- IF 'sc DO  QUIT
- . WRITE "  ERROR creating namespace: ",$SYSTEM.Status.GetErrorText(sc),!
+ IF 'sc WRITE "  ERROR creating namespace: ",$SYSTEM.Status.GetErrorText(sc),! QUIT
  WRITE "  Namespace created.",!
  ;
  ; --- Step 3: Add Routine Mappings ---
