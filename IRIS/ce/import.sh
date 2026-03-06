@@ -24,6 +24,16 @@ NAMESPACE=$(echo "$NAMESPACE" | tr '[:lower:]' '[:upper:]')
 SOURCE_DIR="${SOURCE_DIR:-/opt/vista/source}"
 SCRIPTS_DIR="${SCRIPTS_DIR:-/opt/vista/scripts}"
 
+# --- Step 0: Create Database, Namespace, and Mappings ---
+echo ""
+echo "=== Step 0: Creating Database and Namespace ==="
+iris session "$IRIS_INSTANCE" -U %SYS <<NSEOF
+DO \$SYSTEM.OBJ.Load("${SCRIPTS_DIR}/setup-namespace.m","ck-d")
+DO ^setupns
+HALT
+NSEOF
+echo "  Namespace setup complete"
+
 # --- Step 1: Import Routines (.m files) ---
 echo ""
 echo "=== Step 1: Importing Routines ==="

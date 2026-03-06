@@ -60,7 +60,7 @@ USER irisowner
 COPY --from=source --chown=irisowner:irisowner /src/FOIA-RPMS/Packages/ /opt/vista/source/Packages/
 
 # Copy IRIS CE import scripts and configuration
-COPY --chown=irisowner:irisowner IRIS/ce/merge-create.cpf IRIS/ce/merge-map.cpf /opt/vista/
+COPY --chown=irisowner:irisowner IRIS/ce/setup-namespace.m /opt/vista/scripts/
 COPY --chown=irisowner:irisowner IRIS/ce/import.sh /opt/vista/scripts/
 COPY --chown=irisowner:irisowner IRIS/ce/importrtn.m IRIS/ce/importgbl.m /opt/vista/scripts/
 COPY --chown=irisowner:irisowner IRIS/ce/postinstall.m /opt/vista/scripts/
@@ -76,22 +76,20 @@ USER irisowner
 
 # Uppercase the instance name for IRIS namespace (dash doesn't support ${var^^})
 # and pass it through as an ENV so import.sh picks it up at build & run time
-RUN UPPER=$(echo "${instance}" | tr '[:lower:]' '[:upper:]') \
-    && sed -i "s/RPMS/${UPPER}/g" /opt/vista/merge-create.cpf \
-    && sed -i "s|/usr/irissys/mgr/rpms/|/usr/irissys/mgr/${instance}/|g" /opt/vista/merge-create.cpf \
-    && sed -i "s/RPMS/${UPPER}/g" /opt/vista/merge-map.cpf \
-    && echo "${UPPER}" > /tmp/.iris-namespace
+RUN echo "${instance}" | tr '[:lower:]' '[:upper:]' > /tmp/.iris-namespace
 # ENV cannot use shell commands, so we set it from the ARG directly.
 # IRIS namespaces are case-insensitive; the CPF files are already uppercased above.
 ENV NAMESPACE=${instance}
 
-# Start IRIS, apply namespace/mapping config, import data, and stop — all in
-# one RUN to avoid port-binding issues when restarting across layers under QEMU.
-RUN iris start IRIS quietly \
-    && iris merge IRIS /opt/vista/merge-create.cpf \
-    && iris merge IRIS /opt/vista/merge-map.cpf \
+# Disable the superserver port during build to avoid QEMU port-binding failures
+# on arm64 cross-builds.  Create the RPMS database, namespace and mappings via
+# ObjectScript (Config.* API) instead of "iris merge" — which would try to
+# restart the superserver.  Restore the port before committing the layer.
+RUN sed -i 's/^DefaultPort=.*/DefaultPort=0/' /usr/irissys/iris.cpf \
+    && iris start IRIS quietly \
     && /opt/vista/scripts/import.sh \
-    && iris stop IRIS quietly
+    && iris stop IRIS quietly \
+    && sed -i 's/^DefaultPort=0/DefaultPort=1972/' /usr/irissys/iris.cpf
 
 EXPOSE 1972 52773
 
