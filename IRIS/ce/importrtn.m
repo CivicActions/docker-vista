@@ -38,6 +38,9 @@ LOADONE(path,ok,err) ; Load a single .m file as a routine
      DO rtn.WriteLine(line)
    }
    SET sc=rtn.Save()
+   IF 'sc SET err=err+1 QUIT
+   ; Save() stores source only — compile to generate executable OBJ code
+   SET sc=rtn.Compile()
    IF sc SET ok=ok+1
    ELSE  SET err=err+1
  } CATCH e {
