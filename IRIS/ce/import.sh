@@ -28,6 +28,7 @@ SCRIPTS_DIR="${SCRIPTS_DIR:-/opt/vista/scripts}"
 echo ""
 echo "=== Step 0: Creating Database and Namespace ==="
 iris session "$IRIS_INSTANCE" -B <<NSEOF
+ZN "%SYS"
 DO \$SYSTEM.OBJ.Load("${SCRIPTS_DIR}/setup-namespace.m","ck-d")
 DO ^setupns
 HALT
