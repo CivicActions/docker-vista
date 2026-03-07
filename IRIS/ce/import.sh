@@ -50,6 +50,17 @@ RTNEOF
 echo "  Routine import complete"
 rm -f /tmp/routines.lst
 
+# --- Step 1b: Compile Routines ---
+echo ""
+echo "=== Step 1b: Compiling Routines ==="
+iris session "$IRIS_INSTANCE" -B <<CMPEOF
+ZN "${NAMESPACE}"
+DO \$SYSTEM.OBJ.Load("${SCRIPTS_DIR}/compilertn.m","ck-d")
+DO ^compilertn
+HALT
+CMPEOF
+echo "  Routine compile complete"
+
 # --- Step 2: Import Globals (.zwr files) ---
 echo ""
 echo "=== Step 2: Importing Globals ==="
@@ -83,18 +94,12 @@ else
 fi
 
 # --- Step 4: Run ZTMGRSET ---
-# ZTMGRSET prompts for the OS type — feed it "IRIS" and confirm
+# ZTMGRSET prompts for the OS type and confirmations.
+# Use printf to feed responses through stdin so they are
+# consumed by READ commands rather than parsed as ObjectScript.
 echo ""
 echo "=== Step 4: Running ZTMGRSET ==="
-iris session "$IRIS_INSTANCE" -B <<ZTMEOF
-ZN "${NAMESPACE}"
-IF \$TEXT(^ZTMGRSET)]"" DO ^ZTMGRSET
-IRIS
-Y
-Y
-Y
-HALT
-ZTMEOF
+printf 'ZN "${NAMESPACE}"\nIF \$TEXT(^ZTMGRSET)]"" DO ^ZTMGRSET\nIRIS\nY\nY\nY\nHALT\n' | iris session "$IRIS_INSTANCE" -B
 echo "  ZTMGRSET complete (exit: $?)"
 
 # --- Step 5: Post-install configuration ---

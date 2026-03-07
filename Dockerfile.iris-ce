@@ -62,7 +62,7 @@ COPY --from=source --chown=irisowner:irisowner /src/FOIA-RPMS/Packages/ /opt/vis
 # Copy IRIS CE import scripts and configuration
 COPY --chown=irisowner:irisowner IRIS/ce/setup-namespace.m /opt/vista/scripts/
 COPY --chown=irisowner:irisowner IRIS/ce/import.sh /opt/vista/scripts/
-COPY --chown=irisowner:irisowner IRIS/ce/importrtn.m IRIS/ce/importgbl.m /opt/vista/scripts/
+COPY --chown=irisowner:irisowner IRIS/ce/importrtn.m IRIS/ce/importgbl.m IRIS/ce/compilertn.m /opt/vista/scripts/
 COPY --chown=irisowner:irisowner IRIS/ce/postinstall.m /opt/vista/scripts/
 
 # Copy common scripts (for KBANTCLN, etc.)
