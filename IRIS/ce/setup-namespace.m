@@ -24,11 +24,16 @@ setupns ; Create RPMS database, namespace, and mappings
  ;
  ; --- Step 1: Create Database ---
  WRITE "Creating database...",!
+ ; First create the physical IRIS.DAT file
+ SET sc=##class(SYS.Database).CreateDatabase(dir)
+ IF 'sc WRITE "  ERROR creating database file: ",$SYSTEM.Status.GetErrorText(sc),! QUIT
+ WRITE "  Database file created.",!
+ ; Then register in CPF configuration
  KILL props
  SET props("Directory")=dir
  SET sc=##class(Config.Databases).Create(ns,.props)
- IF 'sc WRITE "  ERROR creating database: ",$SYSTEM.Status.GetErrorText(sc),! QUIT
- WRITE "  Database created.",!
+ IF 'sc WRITE "  ERROR registering database: ",$SYSTEM.Status.GetErrorText(sc),! QUIT
+ WRITE "  Database registered.",!
  ;
  ; --- Step 2: Create Namespace ---
  WRITE "Creating namespace...",!
