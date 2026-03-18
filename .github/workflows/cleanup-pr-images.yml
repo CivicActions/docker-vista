@@ -1,0 +1,53 @@
+name: Cleanup PR Images
+
+# Delete PR-specific container images when a PR is closed (merged or not)
+on:
+  pull_request:
+    types: [closed]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: rpms-iris
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+
+    strategy:
+      matrix:
+        source: [worldvista, civicactions]
+
+    steps:
+      - name: Delete PR image tag
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: pr-${{ github.event.pull_request.number }}-${{ matrix.source }}
+          OWNER: ${{ github.repository_owner }}
+        run: |
+          echo "Cleaning up image tag: ${TAG}"
+
+          # List package versions and find the one with our PR tag
+          VERSION_ID=$(gh api \
+            "/orgs/${OWNER}/packages/container/${IMAGE_NAME}/versions" \
+            --paginate --jq ".[] | select(.metadata.container.tags | index(\"${TAG}\")) | .id" \
+          2>/dev/null || true)
+
+          if [ -z "$VERSION_ID" ]; then
+            # Try user endpoint if org endpoint fails
+            VERSION_ID=$(gh api \
+              "/user/packages/container/${IMAGE_NAME}/versions" \
+              --paginate --jq ".[] | select(.metadata.container.tags | index(\"${TAG}\")) | .id" \
+            2>/dev/null || true)
+            API_PREFIX="/user/packages/container/${IMAGE_NAME}/versions"
+          else
+            API_PREFIX="/orgs/${OWNER}/packages/container/${IMAGE_NAME}/versions"
+          fi
+
+          if [ -n "$VERSION_ID" ]; then
+            echo "Deleting version ${VERSION_ID} (tag: ${TAG})"
+            gh api --method DELETE "${API_PREFIX}/${VERSION_ID}" || echo "Warning: delete failed (may need admin permissions)"
+          else
+            echo "No image found with tag ${TAG} — nothing to clean up"
+          fi
