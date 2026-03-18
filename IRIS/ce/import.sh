@@ -35,6 +35,24 @@ HALT
 NSEOF
 echo "  Namespace setup complete"
 
+# --- Step 0b: Load ZSTU (startup routine) into %SYS ---
+if [ -f "$SCRIPTS_DIR/ZSTU.m" ]; then
+    echo ""
+    echo "=== Step 0b: Loading ZSTU startup routine into %SYS ==="
+    iris session "$IRIS_INSTANCE" -B <<ZSTUEOF
+ZN "%SYS"
+SET rtn=##class(%Routine).%New("ZSTU.MAC")
+SET stream=##class(%Stream.FileCharacter).%New()
+SET sc=stream.LinkToFile("${SCRIPTS_DIR}/ZSTU.m")
+WHILE 'stream.AtEnd { SET line=stream.ReadLine() DO rtn.WriteLine(line) }
+SET sc=rtn.Save()
+SET sc=rtn.Compile("ck")
+WRITE "ZSTU loaded and compiled in %SYS",!
+HALT
+ZSTUEOF
+    echo "  ZSTU setup complete"
+fi
+
 # --- Step 1: Import Routines (.m files) ---
 echo ""
 echo "=== Step 1: Importing Routines ==="
