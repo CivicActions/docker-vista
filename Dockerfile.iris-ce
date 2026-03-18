@@ -22,7 +22,7 @@
 #       -t rpms-iris .
 #
 # Run:
-#   docker run -d -p 1972:1972 -p 52773:52773 --name=rpms rpms-iris
+#   docker run -d -p 1972:1972 -p 9100:9100 -p 9101:9101 -p 52773:52773 --name=rpms rpms-iris
 
 # --- Stage 1: Clone the source repository ---
 FROM ubuntu:22.04 AS source
@@ -67,6 +67,7 @@ COPY --chown=irisowner:irisowner IRIS/ce/postinstall.m /opt/vista/scripts/
 
 # Copy common scripts (for KBANTCLN, etc.)
 COPY --chown=irisowner:irisowner Common/KBANTCLN.m /opt/vista/scripts/
+COPY --chown=irisowner:irisowner IRIS/ce/ZSTU.m /opt/vista/scripts/
 
 # Fix line endings and permissions
 USER root
@@ -91,7 +92,7 @@ RUN sed -i 's/^DefaultPort=.*/DefaultPort=0/' /usr/irissys/iris.cpf \
     && iris stop IRIS quietly \
     && sed -i 's/^DefaultPort=0/DefaultPort=1972/' /usr/irissys/iris.cpf
 
-EXPOSE 1972 52773
+EXPOSE 1972 9100 9101 52773
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
     CMD iris qlist IRIS 2>/dev/null | grep -q running || exit 1
