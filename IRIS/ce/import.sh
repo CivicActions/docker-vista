@@ -118,6 +118,22 @@ else
     echo "  postinstall.m not found - skipping"
 fi
 
+# --- Step 6: Seed test users ---
+echo ""
+echo "=== Step 6: Seeding Test Users ==="
+SEEDUSERS="$SCRIPTS_DIR/seedusers.m"
+if [ -f "$SEEDUSERS" ]; then
+    iris session "$IRIS_INSTANCE" -B <<SEEDEOF || echo "  Seed users had warnings (non-fatal)"
+ZN "${NAMESPACE}"
+DO \$SYSTEM.OBJ.Load("${SEEDUSERS}","ck-d")
+DO ^seedusers
+HALT
+SEEDEOF
+    echo "  Seed users complete"
+else
+    echo "  seedusers.m not found - skipping"
+fi
+
 echo ""
 echo "=== Import Summary ==="
 echo "  Source:       $SOURCE_DIR"
