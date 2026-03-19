@@ -71,7 +71,17 @@ RPMS (RPMS, YottaDB, no boostrap, skip testing, and do post-install as well)
 RPMS on IRIS Community Edition (no license required, imports from git repo):
 
     docker build -f Dockerfile.iris-ce --build-arg RPMS_REPO=https://github.com/WorldVistA/FOIA-RPMS.git --build-arg instance="rpms" -t rpms-iris .
-    docker run -d -p 1972:1972 -p 52773:52773 --name=rpms rpms-iris
+    docker run -d -p 1972:1972 -p 9100:9100 -p 9101:9101 -p 52773:52773 --name=rpms rpms-iris
+
+Ports: 1972 (IRIS superserver), 9100 (XWB RPC Broker), 9101 (BMX Broker), 52773 (IRIS Management Portal).
+
+Test users (for XUS AV CODE authentication, format `ACCESS_CODE;VERIFY_CODE`):
+
+| DUZ | Name | Access Code | Verify Code | Role |
+| --- | --- | --- | --- | --- |
+| 1 | PROVIDER,TEST | PROV123 | PROV123!! | Provider |
+| 2 | PROGRAMMER,SYSTEM | PROG123 | PROG123!! | Programmer |
+| 3 | NURSE,TEST | NURSE123 | NURSE123!! | Nurse |
 
 IRIS Install with local VistA DAT file. You need to supply your own IRIS.DAT and IRIS.key and .tar.gz installer for RHEL.  These files need to be added to the iris-files directories.
 
