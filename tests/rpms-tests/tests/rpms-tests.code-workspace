@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"path": ".."
+		},
+		{
+			"path": "../../docker-vista"
+		},
+		{
+			"path": "../../vista-clients"
+		}
+	],
+	"settings": {}
+}
