@@ -1,0 +1,15 @@
+.git
+.gitignore
+*.md
+LICENSE
+NOTICE
+Vagrantfile
+test.cmake
+Dashboard/
+EWD/
+ViViaN/
+zwr-zip/*.zip
+iris-files/cache-*
+iris-files/cache.dat
+iris-files/CACHE.DAT
+iris-files/cache.key
