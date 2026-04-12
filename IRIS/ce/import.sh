@@ -35,24 +35,6 @@ HALT
 NSEOF
 echo "  Namespace setup complete"
 
-# --- Step 0b: Load ZSTU (startup routine) into %SYS ---
-if [ -f "$SCRIPTS_DIR/ZSTU.m" ]; then
-    echo ""
-    echo "=== Step 0b: Loading ZSTU startup routine into %SYS ==="
-    iris session "$IRIS_INSTANCE" -B <<ZSTUEOF
-ZN "%SYS"
-SET rtn=##class(%Routine).%New("ZSTU.MAC")
-SET stream=##class(%Stream.FileCharacter).%New()
-SET sc=stream.LinkToFile("${SCRIPTS_DIR}/ZSTU.m")
-WHILE 'stream.AtEnd { SET line=stream.ReadLine() DO rtn.WriteLine(line) }
-SET sc=rtn.Save()
-SET sc=rtn.Compile("ck")
-WRITE "ZSTU loaded and compiled in %SYS",!
-HALT
-ZSTUEOF
-    echo "  ZSTU setup complete"
-fi
-
 # --- Step 1: Import Routines (.m files) ---
 echo ""
 echo "=== Step 1: Importing Routines ==="
@@ -134,6 +116,96 @@ POSTEOF
     echo "  Post-install complete"
 else
     echo "  postinstall.m not found - skipping"
+fi
+
+# --- Step 6: Seed test users ---
+echo ""
+echo "=== Step 6: Seeding Test Users ==="
+SEEDUSERS="$SCRIPTS_DIR/seedusers.m"
+if [ -f "$SEEDUSERS" ]; then
+    iris session "$IRIS_INSTANCE" -B <<SEEDEOF || echo "  Seed users had warnings (non-fatal)"
+ZN "${NAMESPACE}"
+DO \$SYSTEM.OBJ.Load("${SEEDUSERS}","ck-d")
+DO ^seedusers
+HALT
+SEEDEOF
+    echo "  Seed users complete"
+else
+    echo "  seedusers.m not found - skipping"
+fi
+
+# --- Step 7: Register application context options ---
+echo ""
+echo "=== Step 7: Registering Application Context Options ==="
+SEEDOPTIONS="$SCRIPTS_DIR/seedoptions.m"
+if [ -f "$SEEDOPTIONS" ]; then
+    iris session "$IRIS_INSTANCE" -B <<OPTEOF || echo "  Seed options had warnings (non-fatal)"
+ZN "${NAMESPACE}"
+DO \$SYSTEM.OBJ.Load("${SEEDOPTIONS}","ck-d")
+DO ^seedoptions
+HALT
+OPTEOF
+    echo "  Seed options complete"
+else
+    echo "  seedoptions.m not found - skipping"
+fi
+
+# --- Step 8: Seed test patients ---
+echo ""
+echo "=== Step 8: Seeding Test Patients ==="
+SEEDPATIENTS="$SCRIPTS_DIR/seedpatients.m"
+if [ -f "$SEEDPATIENTS" ]; then
+    iris session "$IRIS_INSTANCE" -B <<PATEOF || echo "  Seed patients had warnings (non-fatal)"
+ZN "${NAMESPACE}"
+DO \$SYSTEM.OBJ.Load("${SEEDPATIENTS}","ck-d")
+DO ^seedpatients
+HALT
+PATEOF
+    echo "  Seed patients complete"
+else
+    echo "  seedpatients.m not found - skipping"
+fi
+
+# --- Step 9: Patch %ZOSV and fix NULL device ---
+echo ""
+echo "=== Step 9: Patching %ZOSV and Device Configuration ==="
+# Add missing PRI entry point to %ZOSV (needed by %ZIS for XWB broker)
+ZOSVONT=$(find "$SOURCE_DIR" -name "ZOSVONT.m" -type f | head -1)
+if [ -n "$ZOSVONT" ]; then
+    cp "$ZOSVONT" /tmp/zosvont_patched.m
+    printf 'PRI() ;Return process priority for IRIS\n Q 8 ;Normal priority\n' >> /tmp/zosvont_patched.m
+    # Add ROUTINE header for IRIS loading
+    { echo 'ROUTINE %ZOSV [Type=MAC]'; cat /tmp/zosvont_patched.m; } > /tmp/zosv_final.m
+    iris session "$IRIS_INSTANCE" -B <<ZOSVEOF || echo "  %ZOSV patch had warnings (non-fatal)"
+ZN "${NAMESPACE}"
+DO \$SYSTEM.OBJ.Load("/tmp/zosv_final.m","ck-d")
+IF \$TEXT(PRI^%ZOSV)]"" WRITE "  PRI^%ZOSV patched successfully",!
+HALT
+ZOSVEOF
+    rm -f /tmp/zosvont_patched.m /tmp/zosv_final.m
+fi
+# Fix NULL device path from Windows (//./nul) to Linux (/dev/null)
+iris session "$IRIS_INSTANCE" -B <<NULLEOF || echo "  NULL device fix had warnings (non-fatal)"
+ZN "${NAMESPACE}"
+NEW I SET I=0 FOR  SET I=\$ORDER(^%ZIS(1,I)) QUIT:'I  IF \$GET(^%ZIS(1,I,0))["//./nul" SET \$PIECE(^%ZIS(1,I,0),"^",2)="/dev/null" WRITE "  NULL device ",I," fixed to /dev/null",!
+HALT
+NULLEOF
+echo "  Device configuration complete"
+
+# --- Step 10: Load %ZSTART system startup routine ---
+echo ""
+echo "=== Step 10: Loading %ZSTART Startup Routine ==="
+ZSTU="$SCRIPTS_DIR/ZSTU.m"
+if [ -f "$ZSTU" ]; then
+    iris session "$IRIS_INSTANCE" -B <<ZSTUEOF || echo "  %ZSTART load had warnings (non-fatal)"
+ZN "%SYS"
+DO \$SYSTEM.OBJ.Load("${ZSTU}","ck-d")
+IF \$TEXT(SYSTEM^%ZSTART)]"" WRITE "  %ZSTART loaded - XWB/BMX listeners will start on boot",!
+HALT
+ZSTUEOF
+    echo "  %ZSTART startup routine loaded"
+else
+    echo "  ZSTU.m not found - skipping"
 fi
 
 echo ""

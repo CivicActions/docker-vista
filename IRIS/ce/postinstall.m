@@ -19,6 +19,9 @@ postinstall ; RPMS Post-Install Configuration for IRIS
  ; 4. Configure system parameters
  DO SYSCONFIG
  ;
+ ; 5. Configure RPC Broker job limit
+ DO BROKERLIMIT
+ ;
  WRITE !,"=== Post-Install Configuration Complete ===",!
  QUIT
  ;
@@ -94,4 +97,20 @@ SYSCONFIG ; Configure system parameters
  ; Set device parameters for proper IRIS/Linux operation
  ;
  WRITE "System configuration complete",!
+ QUIT
+ ;
+BROKERLIMIT ; Set RPC Broker concurrent connection limit
+ ; The Kernel System Parameters file (8989.3) sub-file 4 (8989.33)
+ ; controls max concurrent broker connections per volume set.
+ ; Default falls through to limit=1 which rejects all connections
+ ; when any IRIS background jobs are running.
+ WRITE !,"Setting RPC Broker connection limit...",!
+ NEW VOL
+ DO GETENV^%ZOSV SET VOL=$PIECE(Y,"^",2)
+ IF VOL="" SET VOL="ROU"
+ ; Create entry: volume^flag^limit (100 concurrent connections)
+ SET ^XTV(8989.3,1,4,1,0)=VOL_"^y^100"
+ SET ^XTV(8989.3,1,4,"B",VOL,1)=""
+ SET ^XTV(8989.3,1,4,0)="^8989.33^1^1"
+ WRITE "Broker connection limit set to 100 for volume "_VOL,!
  QUIT
