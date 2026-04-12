@@ -163,6 +163,8 @@ Build example:
 
 The Management Portal is available at http://localhost:52773/csp/sys/UtilHome.csp.
 
+An integration test suite for the IRIS CE image lives in [`tests/rpms-tests/`](tests/rpms-tests/). It uses [vista-clients](https://github.com/CivicActions/vista-clients) to exercise the RPC broker (authentication, context management, patient data, clinical RPCs) against a running container. See [tests/rpms-tests/README.md](tests/rpms-tests/README.md) for setup and usage.
+
 ### Licensed IRIS (Dockerfile)
 
 IRIS will not have any pre-built images due to license restrictions.  The
