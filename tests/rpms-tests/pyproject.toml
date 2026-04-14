@@ -14,7 +14,7 @@ dependencies = []
 [dependency-groups]
 dev = [
     "vista-clients @ git+https://github.com/CivicActions/vista-clients.git@027-rpms-image-tests",
-    "pytest>=7.0",
+    "pytest>=9.0.3",
 ]
 
 [tool.pytest.ini_options]
