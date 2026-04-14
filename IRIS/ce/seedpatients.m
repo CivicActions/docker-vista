@@ -57,9 +57,17 @@ PATIENT1 ; --- Patient 100: TESTPATIENT,ALICE ---
  WRITE "  Patient 100: Problem (Hypertension, I10/38341003) - OK",!
  ;
  ; Allergy: Penicillin (drug allergy, SNOMED 91936005)
- ; Pieces: patient_dfn^reactant^p3^p4^allergy_type^snomed_code
- SET ^GMR(120.8,1,0)="100^PENICILLIN^^^D^91936005"
+ ; File 120.8 PATIENT ALLERGIES — node 0 has 20+ pieces:
+ ;   P1=DFN, P2=reactant_text, P3=GMR_ALLERGY_ptr, P6=observed/historical,
+ ;   P14=mechanism(A=Allergic,P=Pharmacologic,U=Unknown),
+ ;   P16=verified(0/1), P20=allergy_type(D=Drug,F=Food,O=Other)
+ SET ^GMR(120.8,1,0)="100^PENICILLIN^^^^^^^^^^^^A^^1^^^^D"
  SET ^GMR(120.8,"B",100,1)=""
+ ;
+ ; File 120.86 ADVERSE REACTION ASSESSMENT
+ ;   P1=DFN(.01 PATIENT ptr), P2=REACTION ASSESSMENT (1=Yes,0=No)
+ SET ^GMR(120.86,100,0)="100^1"
+ SET ^GMR(120.86,"B",100,100)=""
  WRITE "  Patient 100: Allergy (Penicillin, SNOMED 91936005) - OK",!
  ;
  ; Vitals: BP, Pulse, Temp for Visit 1001
@@ -131,6 +139,10 @@ PATIENT2 ; --- Patient 101: TESTPATIENT,BOB ---
  SET ^AUPNPROB(2,14,"B",1002)=""
  WRITE "  Patient 101: Problem (Diabetes, E11.9/44054006) - OK",!
  ;
+ ; File 120.86: Mark patient as assessed with NO known allergies
+ SET ^GMR(120.86,101,0)="101^0"
+ SET ^GMR(120.86,"B",101,101)=""
+ ;
  ; NOTE: Patient 101 intentionally has NO allergies, NO vitals,
  ; NO medications, NO labs, and NO immunizations
  ; to test empty/no-data response paths
@@ -165,6 +177,10 @@ HEADERS ; --- Update file header nodes ---
  ; ^GMR(120.8,0): Patient Allergies file header
  SET LASTIEN=$PIECE($GET(^GMR(120.8,0)),"^",3)
  IF LASTIEN<1 SET $PIECE(^GMR(120.8,0),"^",3)=1
+ ;
+ ; ^GMR(120.86,0): Adverse Reaction Assessment file header
+ SET LASTIEN=$PIECE($GET(^GMR(120.86,0)),"^",3)
+ IF LASTIEN<101 SET $PIECE(^GMR(120.86,0),"^",3)=101
  ;
  ; ^PSRX(0): Prescription file header
  SET LASTIEN=$PIECE($GET(^PSRX(0)),"^",3)
